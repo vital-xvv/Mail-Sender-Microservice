@@ -1,0 +1,33 @@
+elasticsearch:
+  url: elasticsearch:9200
+
+spring:
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    default-encoding: UTF-8
+    properties:
+      mail:
+        mime:
+          charset: UTF
+        smtp:
+          write-timeout: 10000
+          connection-timeout: 10000
+          timeout: 10000
+          auth: true
+          starttls:
+            enable: true
+            required: true
+
+  application:
+    name: MailSender
+  elasticsearch:
+    uris: elasticsearch:9200
+  rabbitmq:
+    host: rabbitmq
+    port: 5672
+
+server:
+  port: 9000
+
+

@@ -1,0 +1,72 @@
+version: '1'
+services:
+  elasticsearch:
+    container_name: elasticsearch
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.14.1
+    environment: ['ES_JAVA_OPTS=-Xms2g -Xmx2g','bootstrap.memory_lock=true','discovery.type=single-node','xpack.security.enabled=false', 'xpack.security.enrollment.enabled=false']
+    ports:
+      - "9200:9200"
+    networks:
+      - mail-sender
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    healthcheck:
+      test: curl -u elastic:elastic -s -f elasticsearch:9200/_cat/health >/dev/null || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.14.1
+    container_name: kibana
+    environment:
+      XPACK_APM_SERVICEMAPENABLED: "true"
+      XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY: aaaaaaaa-c4d3-4a0a-8290-2abcb83ab3aa
+
+    ports:
+      - "5601:5601"
+    networks:
+      - mail-sender
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: 'rabbitmq'
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - ~/.docker-conf/rabbitmq/data/:/var/lib/rabbitmq/
+      - ~/.docker-conf/rabbitmq/log/:/var/log/rabbitmq
+    networks:
+      - mail-sender
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  spring-mail-sender:
+    container_name: spring-emailing-app
+    image: spring-mail-sender-app
+    environment:
+      SPRING_MAIL_USERNAME: ${SPRING_MAIL_USERNAME}
+      SPRING_MAIL_PASSWORD: ${SPRING_MAIL_PASSWORD}
+      FROM_EMAIL: ${FROM_EMAIL}
+    ports:
+      - "9000:9000"
+    networks:
+      - mail-sender
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+networks:
+  mail-sender:
+    driver: bridge

@@ -1,0 +1,35 @@
+FROM_EMAIL: <FILL ME FROM .env>
+
+elasticsearch:
+  url: localhost:9200
+
+spring:
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: <FILL ME FROM .env>
+    password: <FILL ME FROM .env>
+    default-encoding: UTF-8
+    properties:
+      mail:
+        mime:
+          charset: UTF
+        smtp:
+          write-timeout: 10000
+          connection-timeout: 10000
+          timeout: 10000
+          auth: true
+          starttls:
+            enable: true
+            required: true
+
+  application:
+    name: MailSender
+  elasticsearch:
+    uris: localhost:9200
+  rabbitmq:
+    host: localhost
+    port: 5672
+
+server:
+  port: 9001

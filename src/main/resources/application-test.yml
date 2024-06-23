@@ -1,0 +1,13 @@
+FROM_EMAIL: sender_example@gmail.com
+
+elasticsearch:
+  url: localhost:9200
+
+spring:
+  application:
+    name: MailSender
+  elasticsearch:
+    uris: localhost:9200
+  rabbitmq:
+    host: localhost
+    port: 5672
