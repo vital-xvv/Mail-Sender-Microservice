@@ -5,10 +5,16 @@ import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.mail.MailAuthenticationException;
 import org.springframework.mail.MailSendException;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestConstructor;
+import org.testcontainers.containers.RabbitMQContainer;
+import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
+import org.testcontainers.elasticsearch.ElasticsearchContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import ua.vital.mailsender.document.FileEmailMessage;
 import ua.vital.mailsender.enumeration.EmailMessageStatus;
 import ua.vital.mailsender.enumeration.FileEventType;
@@ -18,12 +24,14 @@ import ua.vital.mailsender.repository.FileEmailMessageRepository;
 import ua.vital.mailsender.scheduled.ScheduledTasks;
 import ua.vital.mailsender.service.EmailSenderService;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 
 import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+@Testcontainers
 @SpringBootTest(
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         classes = MailSenderApplication.class
@@ -34,6 +42,34 @@ import static org.junit.jupiter.api.Assertions.*;
 class MailSenderApplicationTests {
     @Value("${FROM_EMAIL}")
     private String fromEmail;
+    private static final String regex = ".*(\"message\":\\s?\"started\".*|] started\n$)";
+    private static final String ELASTIC_IMAGE = "docker.elastic.co/elasticsearch/elasticsearch:7.17.15";
+    private static final String RABBITMQ_IMAGE = "rabbitmq:3-management-alpine";
+
+    public static class ElasticTestContainer extends ElasticsearchContainer {
+        public ElasticTestContainer(String dockerImageName) {
+            super(dockerImageName);
+            this.addFixedExposedPort(9200, 9200);
+            this.addFixedExposedPort(9300, 9300);
+            this.addEnv("sample-cluster", "elasticsearch");
+        }
+    }
+
+    @Container
+    public static ElasticsearchContainer elasticsearchContainer =
+            new MailSenderApplicationTests.ElasticTestContainer(ELASTIC_IMAGE);
+
+    static {
+        elasticsearchContainer.setWaitStrategy((new LogMessageWaitStrategy())
+                .withRegEx(regex)
+                .withStartupTimeout(Duration.ofMinutes(3)));
+    }
+
+    @Container
+    @ServiceConnection
+    public static RabbitMQContainer rabbitMQContainer =
+            new RabbitMQContainer(RABBITMQ_IMAGE);
+
     private final FileMessageListener fileMessageListener;
     private final FileEmailMessageRepository fileEmailMessageRepository;
     private final ScheduledTasks scheduledTasks;

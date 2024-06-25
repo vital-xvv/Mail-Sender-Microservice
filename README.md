@@ -4,9 +4,7 @@
 
 1. Build an executable JAR archive of the implememnted Java mircoservice.
 
-   Run `mvn clean package -Dmaven.test.skip`
-
-   We are skipping integrational tests while packaging of our project because we need running instances of elasticsearch and rabbitmq images in docker containers.
+   Run `mvn clean package`
 
    After running this command you may see a newly created .jar file like this:
 
@@ -24,7 +22,7 @@
 
    Run `docker-compose up`
 
-   After running this commn=and all containers should have a "RUNNING" status:
+   After running this command all containers should have a "RUNNING" status:
 
 ![containers](assets/containers.png)
 
@@ -40,4 +38,4 @@
 
 # Running integrational tests
 
-### **Caution! To run integrational tests of the application make sure you have running instances of Elasticsearch and RabbitMQ microservices on your local machine on special porst specified in application-test.yml file whether in Docker or as standalone apps**.
+### **Caution! To run integrational tests of the application make sure you have a Docker environment installed on your local machine to create testcontainers**.
